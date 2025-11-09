@@ -8,6 +8,8 @@ class RequestLog(models.Model):
     ip_address = models.GenericIPAddressField(protocol='both', unpack_ipv4=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     path = models.CharField(max_length=255)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
 
 
     class Meta:
@@ -26,7 +28,7 @@ class BlockedIP(models.Model):
     ip_address = models.GenericIPAddressField(
         protocol='both',
         unpack_ipv4=True,
-        unique=True,               # Prevent duplicates
+        unique=True,
     )
     added_at = models.DateTimeField(auto_now_add=True)
     reason = models.CharField(max_length=200, blank=True)
@@ -38,3 +40,21 @@ class BlockedIP(models.Model):
 
     def __str__(self):
         return f"{self.ip_address} ({self.reason or 'no reason'})"
+    
+
+class SuspiciousIP(models.Model):
+    """
+    IPs flagged by anomaly detection.
+    """
+    ip_address = models.GenericIPAddressField(protocol='both', unpack_ipv4=True, unique=True)
+    reason = models.TextField()
+    flagged_at = models.DateTimeField(auto_now_add=True)
+    is_blocked = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Suspicious IP"
+        verbose_name_plural = "Suspicious IPs"
+        ordering = ['-flagged_at']
+
+    def __str__(self):
+        return f"{self.ip_address} – {self.reason}"

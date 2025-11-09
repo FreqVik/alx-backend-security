@@ -53,6 +53,27 @@ MIDDLEWARE = [
 
 IP_GEOLOCATION_BACKEND = 'django_ip_geolocation.backends.Ipstack'
 
+# ---- RATE LIMIT CONFIG ----
+RATELIMIT_ENABLE = True  # Enable globally (optional)
+
+# Override for anonymous users: 5 requests/min on POST
+RATELIMIT_VIEW = 'ratelimit.views.is_ratelimited'  # Default 403 handler
+RATELIMIT_USE_CACHE = 'default'  # Use Django's cache backend
+
+# Anonymous rate limit override (applied when user.is_anonymous)
+RATELIMIT_ANON_DEFAULT = '5/m'  # 5 POSTs/min for anon users
+
+# Optional: Customize 403 response
+RATELIMIT_403_MESSAGE = "Rate limit exceeded. Try again in 1 minute."
+
+# Existing CACHES (ensure it's there for rate limiting to work)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
 ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [
@@ -124,3 +145,19 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- CELERY CONFIG ---
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# --- BEAT SCHEDULE (Hourly Task) ---
+CELERY_BEAT_SCHEDULE = {
+    'detect-suspicious-ips-hourly': {
+        'task': 'ip_tracking.tasks.detect_suspicious_ips',
+        'schedule': 3600.0,  # every 60 minutes
+    },
+}

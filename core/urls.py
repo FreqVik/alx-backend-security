@@ -16,7 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from ip_tracking.views import RateLimitedLoginView  # Import your view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('login/', RateLimitedLoginView.as_view(), name='login'),
+    # ... other URLs
 ]
