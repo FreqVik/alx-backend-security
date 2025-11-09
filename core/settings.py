@@ -51,6 +51,8 @@ MIDDLEWARE = [
     'ip_tracking.middleware.RequestLoggingMiddleware',
 ]
 
+IP_GEOLOCATION_BACKEND = 'django_ip_geolocation.backends.Ipstack'
+
 ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [

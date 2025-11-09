@@ -8,8 +8,8 @@ logger = logging.getLogger('request_logger')
 
 class RequestLoggingMiddleware:
     """
-    1. Logs every request (IP, timestamp, path)
-    2. Blocks requests from IPs in BlockedIP → 403
+    1. Blocks blacklisted IPs (403)
+    2. Logs request (uses request.geolocation from django-ip-geolocation)
     """
 
     def __init__(self, get_response):
@@ -22,16 +22,23 @@ class RequestLoggingMiddleware:
         # ---------- BLOCK CHECK ----------
         if BlockedIP.objects.filter(ip_address=ip).exists():
             logger.warning("BLOCKED IP %s attempted %s", ip, path)
-            return HttpResponseForbidden(
-                "Access denied: Your IP is blocked."
-            )
+            return HttpResponseForbidden("Access denied: Your IP is blocked.")
 
         # ---------- PROCESS REQUEST ----------
         response = self.get_response(request)
 
-        # ---------- LOG AFTER SUCCESS ----------
-        RequestLog.objects.create(ip_address=ip, path=path)
-        logger.info("IP=%s | PATH=%s", ip, path)
+        # ---------- LOG + GEOLOCATION (from django-ip-geolocation) ----------
+        geo = getattr(request, 'geolocation', None)
+        country = geo.country_name if geo else None
+        city = geo.city if geo else None
+
+        RequestLog.objects.create(
+            ip_address=ip,
+            path=path,
+            country=country,
+            city=city,
+        )
+        logger.info("IP=%s | %s, %s | %s", ip, city or 'Unknown', country or 'Unknown', path)
 
         return response
 
